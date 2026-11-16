@@ -104,7 +104,7 @@ class LocalVaultRAG:
                 "prompt": system_instruction,
                 "stream": False
             }
-            resp = requests.post(self.ollama_url, json=payload, timeout=45)
+            resp = requests.post(self.ollama_url, json=payload, timeout=90)
             if resp.status_code == 200:
                 data = resp.json()
                 return data.get("response", "Réponse vide."), sources

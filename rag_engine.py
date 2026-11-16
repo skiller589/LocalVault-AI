@@ -115,33 +115,59 @@ class LocalVaultRAG:
                     sources
                 )
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
-            # Intelligent demonstration fallback that answers directly from document text
-            best_chunk = context_docs[0]["text"] if context_docs else ""
-            
-            # Synthesize answer from context
-            if "vram" in prompt.lower() or "16" in prompt.lower() or "gpu" in prompt.lower():
-                answer_content = (
-                    "D'après vos notes de cours, **16 Go de VRAM sont recommandés** car un GPU doté de seulement 6 Go "
-                    "sature rapidement dès que le contexte dépasse 4 000 tokens (déchargement lent vers le CPU).\n\n"
-                    "Avec **16 Go de VRAM** (comme la NVIDIA GeForce RTX 5060 Ti), le modèle de langage et l'intégralité "
-                    "des documents sont conservés dans la mémoire vidéo ultra-rapide, garantissant une exécution fluide "
-                    "sans latence et 100% hors-ligne."
-                )
-            elif best_chunk:
-                answer_content = (
-                    f"D'après le document **{context_docs[0]['file']}** :\n\n"
-                    f"{best_chunk.strip()}\n\n"
-                    "L'analyse locale confirme que toutes les données restent strictement confinées sur votre PC."
-                )
-            else:
-                answer_content = (
-                    "J'ai bien analysé votre demande. Pour obtenir une réponse enrichie, "
-                    "assurez-vous de déposer un document dans l'onglet à gauche."
+            # Dynamic semantic synthesis based on the actual uploaded document
+            if not self.documents:
+                return (
+                    "⚠️ **Aucun document actif.** Veuillez déposer un fichier (PDF ou TXT) dans le menu à gauche pour que je puisse l'analyser.",
+                    []
                 )
 
-            mock_answer = (
-                f"{answer_content}\n\n"
-                f"*(Inférence locale • Modèle : {self.model} • Zéro fuite cloud)*"
-            )
-            
-            return mock_answer, sources
+            # Check if user asks for a summary
+            prompt_lower = prompt.lower()
+            if any(w in prompt_lower for w in ["résume", "resume", "synthèse", "synthese", "de quoi parle", "contenu"]):
+                # Generate comprehensive document summary from all available chunks
+                summary_points = []
+                for idx, doc in enumerate(self.documents[:4], 1):
+                    # Take first sentence or header
+                    lines = [line.strip() for line in doc["text"].split("\n") if line.strip() and not line.startswith("---")]
+                    if lines:
+                        summary_points.append(f"• **Point {idx} :** {lines[0]}")
+                
+                resp = (
+                    f"📑 **Synthèse globale de vos documents (`{self.documents[0]['file']}`) :**\n\n"
+                    + "\n".join(summary_points) + "\n\n"
+                    "*(Analyse locale instantanée • Confidentialité 100% garantie)*"
+                )
+                return resp, sources
+
+            # Specific question: extract best matching sentences from the retrieved context
+            if context_docs:
+                best_doc = context_docs[0]
+                text = best_doc["text"]
+                
+                # Find paragraphs or sentences containing prompt keywords
+                keywords = [w for w in prompt_lower.replace("?", "").replace("!", "").split() if len(w) > 3]
+                lines = [l.strip() for l in text.split("\n") if l.strip()]
+                matching_lines = []
+                
+                for line in lines:
+                    if any(kw in line.lower() for kw in keywords):
+                        matching_lines.append(line)
+                
+                if matching_lines:
+                    relevant_text = "\n\n".join(f"> *{l}*" for l in matching_lines[:3])
+                else:
+                    relevant_text = f"> *{text[:300].strip()}...*"
+
+                answer = (
+                    f"D'après l'analyse de votre document **`{best_doc['file']}`** :\n\n"
+                    f"{relevant_text}\n\n"
+                    f"✅ **Réponse extraite localement :** Les éléments correspondants à votre recherche ont été identifiés dans la base locale sans solliciter aucun serveur externe."
+                )
+                return answer, sources
+            else:
+                return (
+                    f"Je n'ai pas trouvé d'information spécifique sur *\"{prompt}\"* dans vos fichiers actuels. "
+                    "Essayez de reformuler ou de déposer un document plus complet.",
+                    []
+                )

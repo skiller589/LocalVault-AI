@@ -60,7 +60,7 @@ with st.sidebar:
     st.markdown("### 🖥️ Modèle LLM Local")
     model_choice = st.selectbox(
         "Sélectionnez le modèle local :",
-        ["llama3:latest", "mistral:latest", "phi3:mini", "gemma2:9b"],
+        ["llama3.2:latest", "llama3:latest", "mistral:latest", "phi3:mini"],
         index=0
     )
     st.session_state.rag.set_model(model_choice)

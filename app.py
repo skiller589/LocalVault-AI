@@ -74,11 +74,14 @@ with st.sidebar:
     )
     
     if uploaded_files:
-        if st.button("📥 Indexer les fichiers", use_container_width=True):
-            with st.spinner("Indexation vectorielle en cours..."):
-                count = st.session_state.rag.ingest_files(uploaded_files)
-                st.success(f"✓ {count} document(s) indexé(s) dans ChromaDB !")
-                
+        current_names = [f.name for f in uploaded_files]
+        if "indexed_files" not in st.session_state or st.session_state.indexed_files != current_names:
+            count = st.session_state.rag.ingest_files(uploaded_files)
+            st.session_state.indexed_files = current_names
+            st.success(f"✓ {count} document(s) indexé(s) en local !")
+        else:
+            st.info(f"✓ {len(current_names)} document(s) actif(s)")
+            
     st.markdown("---")
     st.markdown("### 🔒 Statut de Confidentialité")
     st.markdown('<span class="status-badge">✓ 100% Hors-Ligne (Zero-Cloud)</span>', unsafe_allow_html=True)

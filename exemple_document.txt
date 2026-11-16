@@ -1,0 +1,14 @@
+NOTES DE COURS — INTELLIGENCE ARTIFICIELLE LOCALE (2026)
+
+1. Introduction au RAG (Retrieval-Augmented Generation) :
+Le RAG permet de connecter un modèle de langage (LLM) à une base documentaire privée sans réentraîner le modèle.
+Les documents sont découpés en petits segments (chunks), puis vectorisés sous forme d'embeddings.
+
+2. Pourquoi l'inférence locale sur GPU est essentielle :
+L'exécution locale garantit que 100% des données restent sur la machine de l'utilisateur.
+Cependant, la taille de la mémoire vidéo (VRAM) est critique :
+- Un GPU avec 6 Go de VRAM sature rapidement sur des contextes de plus de 4 000 tokens.
+- Un GPU avec 16 Go de VRAM (comme la NVIDIA GeForce RTX 5060 Ti) permet de charger le modèle et des documents entiers sans ralentissement.
+
+3. Sécurité et Confidentialité :
+Aucune fuite de données vers des serveurs distants. Idéal pour les documents médicaux, financiers, administratifs et les cours.
